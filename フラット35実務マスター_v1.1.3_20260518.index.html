@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0f1a">
+<title>フラット35 実務マスター</title>
+<!-- フォントはシステムフォントを使用（オフライン完全対応） -->
+<style>
+/* ── システムフォント定義（CDN不要・完全オフライン動作） ── */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+               "Noto Sans JP", "Yu Gothic", YuGothic, Meiryo, sans-serif;
+  --font-mono: "SF Mono", Menlo, Monaco, Consolas, "Courier New", monospace;
+  --bg:#0d0f1a; --panel:#13172a; --panel2:#1a1f38;
+  --border:rgba(255,255,255,0.07);
+  --blue:#2563eb; --blue-glow:rgba(37,99,235,0.35);
+  --cyan:#06b6d4; --gold:#f59e0b; --gold-glow:rgba(245,158,11,0.3);
+  --green:#10b981; --red:#ef4444; --purple:#8b5cf6;
+  --text:#e2e8f0; --muted:#64748b; --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);
+     min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(37,99,235,0.04) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(37,99,235,0.04) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 10% 0%,rgba(37,99,235,0.18) 0%,transparent 55%),
+             radial-gradient(ellipse at 90% 100%,rgba(139,92,246,0.12) 0%,transparent 55%);
+  pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:16px}
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;
+     padding:20px 0 16px;gap:12px;flex-wrap:wrap}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-icon{width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;box-shadow:0 0 20px var(--blue-glow)}
+.hdr-sup{font-size:10px;letter-spacing:2px;color:var(--cyan);
+         text-transform:uppercase;font-weight:600}
+.hdr-main{font-size:22px;font-weight:800;letter-spacing:0.5px;line-height:1}
+.hdr-main em{color:var(--gold);font-style:normal}
+/* ── STATS ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+      padding:12px 10px;text-align:center;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-score::before{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.stat-correct::before{background:var(--green)}
+.stat-wrong::before{background:var(--red)}
+.stat-streak::before{background:linear-gradient(90deg,var(--gold),#fcd34d)}
+.stat-val{font-size:26px;font-weight:800;line-height:1}
+.stat-score .stat-val{color:var(--cyan)}.stat-correct .stat-val{color:var(--green)}
+.stat-wrong .stat-val{color:var(--red)}.stat-streak .stat-val{color:var(--gold)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px}
+/* ── MODE / CATS ── */
+.mode-row{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);
+          border-radius:10px;padding:5px;margin-bottom:16px}
+.m-tab{flex:1;padding:9px 6px;border:none;border-radius:7px;background:transparent;
+       color:var(--muted);font-size:13px;font-family:var(--font-sans);font-weight:600;
+       cursor:pointer;transition:all .2s;white-space:nowrap}
+.m-tab.on{background:var(--blue);color:#fff;box-shadow:0 0 14px var(--blue-glow)}
+.cat-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.cpill{padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.12);
+       background:transparent;color:var(--muted);font-size:12px;
+       font-family:var(--font-sans);cursor:pointer;transition:all .2s}
+.cpill.on{background:rgba(245,158,11,0.15);border-color:var(--gold);
+          color:var(--gold);font-weight:700}
+/* ── PROGRESS ── */
+.prog-wrap{margin-bottom:20px}
+.prog-meta{display:flex;justify-content:space-between;font-size:11px;
+           color:var(--muted);margin-bottom:6px}
+.prog-track{height:5px;background:rgba(255,255,255,0.07);border-radius:10px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));
+           border-radius:10px;transition:width .4s;box-shadow:0 0 8px var(--cyan)}
+/* ── QUESTION CARD ── */
+.qcard{background:var(--panel);border:1px solid var(--border);
+       border-radius:var(--radius);padding:24px 20px 20px;margin-bottom:14px;
+       position:relative;overflow:hidden;animation:slideUp .3s ease}
+.qcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--blue),var(--cyan),var(--purple))}
+.qlabel{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;
+        letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin-bottom:14px}
+.cat-badge{background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25);
+           border-radius:4px;padding:2px 8px;font-size:10px;color:var(--cyan)}
+.qno{color:var(--muted);font-size:11px;margin-left:auto}
+.qtext{font-size:clamp(14px,2.4vw,17px);font-weight:600;line-height:1.8;
+       color:#f1f5f9;margin-bottom:22px}
+/* ── TF BUTTONS ── */
+.tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.tf-btn{padding:22px 12px;border-radius:10px;border:2px solid rgba(255,255,255,0.1);
+        background:var(--panel2);font-size:22px;font-weight:800;
+        cursor:pointer;transition:all .2s;color:var(--text);text-align:center;
+        font-family:var(--font-sans)}
+.tf-btn:hover:not(:disabled){transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);border-color:rgba(255,255,255,.25)}
+.tf-btn:active:not(:disabled){transform:scale(0.97)}
+.tf-btn.correct{background:rgba(16,185,129,.15);border-color:var(--green);
+                color:var(--green);box-shadow:0 0 18px rgba(16,185,129,.25)}
+.tf-btn.wrong{background:rgba(239,68,68,.12);border-color:var(--red);color:var(--red)}
+.tf-btn:disabled{cursor:default;opacity:.85}
+/* ── CHOICE BUTTONS ── */
+.opts{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.opt-btn{padding:13px 16px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.08);
+         background:var(--panel2);font-size:14px;cursor:pointer;transition:all .2s;
+         color:var(--text);text-align:left;line-height:1.6;
+         display:flex;align-items:flex-start;gap:10px;font-family:var(--font-sans)}
+.opt-btn:hover:not(:disabled){border-color:rgba(37,99,235,.5);
+  background:rgba(37,99,235,.08);transform:translateX(3px)}
+.opt-btn:active:not(:disabled){transform:scale(0.98)}
+.opt-btn.correct{background:rgba(16,185,129,.12);border-color:var(--green);color:var(--green)}
+.opt-btn.wrong{background:rgba(239,68,68,.08);border-color:var(--red);color:var(--red)}
+.opt-btn:disabled{cursor:default}
+.opt-key{background:rgba(255,255,255,.08);border-radius:4px;padding:1px 7px;
+         font-size:14px;font-weight:700;flex-shrink:0;margin-top:1px}
+/* ── EXPLANATION ── */
+.exp{display:none;background:rgba(37,99,235,.07);border-left:3px solid var(--blue);
+     border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.8;
+     color:#94a3b8;margin-top:14px}
+.exp.show{display:block;animation:fadeIn .3s}
+.exp strong{color:var(--cyan)}
+.exp-head{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--blue);margin-bottom:6px}
+/* ── FEEDBACK ── */
+.feedback{display:none;text-align:center;font-size:20px;font-weight:800;
+          padding:10px;margin-bottom:12px;border-radius:8px;animation:pop .25s ease}
+.feedback.show{display:block}
+.feedback.ok{color:var(--green);background:rgba(16,185,129,.1)}
+.feedback.ng{color:var(--red);background:rgba(239,68,68,.08)}
+/* ── BUTTONS ── */
+.nav{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.btn{padding:11px 26px;border:none;border-radius:30px;font-family:var(--font-sans);
+     font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;
+     display:flex;align-items:center;gap:6px}
+.btn-go{background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;
+        box-shadow:0 4px 16px var(--blue-glow)}
+.btn-go:hover{transform:translateY(-1px);box-shadow:0 6px 22px var(--blue-glow)}
+.btn-go:active{transform:scale(0.97)}
+.btn-ghost{background:rgba(255,255,255,.07);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,.12);color:var(--text)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#fcd34d);color:#1a1200}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--gold-glow)}
+.btn-sm{padding:7px 16px;font-size:12px}
+/* ── RESULT ── */
+.result-card{background:var(--panel);border:1px solid var(--border);
+             border-radius:var(--radius);padding:40px 28px;text-align:center;
+             position:relative;overflow:hidden}
+.result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--cyan),var(--purple))}
+.result-pct{font-size:88px;font-weight:900;line-height:1;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-pct small{font-size:36px}
+.rank-badge{display:inline-block;margin:12px auto;font-size:20px;font-weight:800;
+            padding:6px 28px;border-radius:30px}
+.rs{background:linear-gradient(135deg,var(--gold),#fcd34d);color:#1a1200}
+.ra{background:var(--green);color:#fff}
+.rb{background:var(--blue);color:#fff}
+.rc{background:var(--muted);color:#fff}
+.result-msg{color:var(--muted);font-size:14px;margin-bottom:24px}
+.result-stats{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.rs-item{text-align:center}
+.rs-val{font-size:30px;font-weight:800}
+/* ── SCORE SAVE PANEL ── */
+.score-panel{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+             border-radius:10px;padding:14px 16px;margin-top:16px;font-size:13px}
+.score-panel-title{color:var(--gold);font-weight:700;margin-bottom:10px;font-size:12px;
+                   letter-spacing:1px;text-transform:uppercase}
+.score-history{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
+.score-row{display:flex;align-items:center;justify-content:space-between;
+           padding:6px 10px;background:var(--panel2);border-radius:7px;font-size:12px}
+.score-row.best{border:1px solid rgba(245,158,11,.4)}
+.score-date{color:var(--muted)}
+.score-pt{font-weight:800;color:var(--cyan)}
+.score-pct{color:var(--muted)}
+/* ── TOP NAV ── */
+.top-nav{display:flex;gap:6px;background:var(--panel);border:1px solid var(--border);
+         border-radius:10px;padding:4px;margin-bottom:16px}
+.top-tab{flex:1;padding:9px 6px;border:none;border-radius:7px;background:transparent;
+         color:var(--muted);font-size:12px;font-family:var(--font-sans);font-weight:600;
+         cursor:pointer;transition:all .2s;text-align:center;white-space:nowrap}
+.top-tab.on{background:var(--blue);color:#fff;box-shadow:0 0 14px var(--blue-glow)}
+/* ── BEST SCORES TAB ── */
+.best-section{margin-bottom:20px}
+.best-title{font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:1px;
+            text-transform:uppercase;margin-bottom:10px}
+.best-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+           padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.best-cat{font-size:13px;font-weight:700;flex:1}
+.best-stat{text-align:right}
+.best-score{font-size:20px;font-weight:800;color:var(--cyan)}
+.best-detail{font-size:11px;color:var(--muted)}
+.best-medal{font-size:24px;width:36px;text-align:center;flex-shrink:0}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .ei{font-size:44px;margin-bottom:12px}
+/* ── ANIMATIONS ── */
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{transform:scale(.85)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.fire{animation:pulse .8s infinite}
+@media(max-width:480px){
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .qcard{padding:18px 14px 14px}
+  .result-pct{font-size:72px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-icon">🏦</div>
+      <div class="hdr-titles">
+        <div class="hdr-sup">住宅金融支援機構 FLAT35</div>
+        <div class="hdr-main">実務<em>マスター</em></div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--muted)">Ver.1.3 スタンドアローン版</div>
+      <div style="font-size:10px;color:var(--muted)">出典: www.flat35.com</div>
+    </div>
+  </div>
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <button class="top-tab on" onclick="showTab('quiz')">📝 クイズ</button>
+    <button class="top-tab"    onclick="showTab('scores')">📊 成績記録</button>
+  </div>
+  <!-- ═══ QUIZ TAB ═══ -->
+  <div id="tabQuiz">
+    <div class="stats-bar">
+      <div class="stat stat-score"><div class="stat-val" id="sScore">0</div><div class="stat-lbl">SCORE</div></div>
+      <div class="stat stat-correct"><div class="stat-val" id="sCorrect">0</div><div class="stat-lbl">正解</div></div>
+      <div class="stat stat-wrong"><div class="stat-val" id="sWrong">0</div><div class="stat-lbl">不正解</div></div>
+      <div class="stat stat-streak"><div class="stat-val" id="sStreak">0</div><div class="stat-lbl"><span id="fireIco">🔥</span> 連続</div></div>
+    </div>
+    <div class="mode-row">
+      <button class="m-tab on" onclick="setMode('tf')">○× クイズ</button>
+      <button class="m-tab"    onclick="setMode('choice')">択一問題</button>
+    </div>
+    <div class="cat-row" id="catRow"></div>
+    <div class="prog-wrap">
+      <div class="prog-meta"><span id="progLbl">問題 1/—</span><span id="progPct">0%</span></div>
+      <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div id="main"></div>
+    <div class="nav" id="nav"></div>
+  </div>
+  <!-- ═══ SCORES TAB ═══ -->
+  <div id="tabScores" style="display:none">
+    <div id="scoresContent"></div>
+  </div>
+</div><!-- /wrap -->
+<script>
+// ══════════════════════════════════════════════════════
+//  スタンドアローン版 - 完全オフライン動作
+//  外部通信なし・CDN不使用・単一HTMLファイル完結
+//  iOS Safari / Android Chrome 含む全端末対応
+//  スコアはメモリ内保存（ページ再読込でリセット）
+// ══════════════════════════════════════════════════════
+// ════════════════════════════════════════
+//  DATA  ── 出典: www.flat35.com（住宅金融支援機構公式サイト）
+// ════════════════════════════════════════
+const CATS = ["商品概要","融資対象物件","フラット35S","申込・審査手続き","団体信用生命保険","フラット50"];
+const TF = [
+  {cat:'商品概要',q:'フラット35は、民間金融機関と住宅金融支援機構が提携して提供する、最長35年の全期間固定金利の住宅ローンである。',a:true,exp:'出典：www.flat35.com「民間金融機関と住宅金融支援機構が提携して提供する最長35年の全期間固定金利の住宅ローンです。資金の受取時に返済終了までの借入金利と返済額が確定するため、長期にわたるライフプランが立てやすくなります。」なお、国が認定する「長期優良住宅」等を対象に最長50年まで返済可能な「フラット50」（36年以上50年以内）という別商品もあります（申込時年齢満44歳未満）。'} ,
+  {cat:'商品概要',q:'フラット35の借入金利は、住宅金融支援機構が全国一律に定める。',a:false,exp:'出典：www.flat35.com（ご利用条件）借入金利は取扱金融機関により異なります。機構は上限金利を定めますが、各金融機関が独自に設定します。'} ,
+  {cat:'商品概要',q:'フラット35の融資限度額は100万円以上8,000万円以下（1万円単位）で、建設費または購入価額以内である。',a:false,exp:'出典：www.flat35.com（2026年度制度改正） 2026年4月以降の資金実行分から融資限度額が引き上げられました。正しくは「100万円以上1億2,000万円以下（1万円単位）」です。8,000万円は2026年3月以前の旧上限額です。'} ,
+  {cat:'商品概要',q:'フラット35では保証人・保証料が不要である。',a:true,exp:'出典：www.flat35.com（4つのメリット）フラット35は保証人・保証料が不要です。これは民間住宅ローンとの大きな差別化ポイントです。'} ,
+  {cat:'商品概要',q:'フラット35は元利均等返済のみ選択できる。',a:false,exp:'出典：www.flat35.com（ご利用条件）「元利均等毎月払いまたは元金均等毎月払いを選択できます」。ボーナス払い（借入金額の40%以内）も併用可能です。'} ,
+  {cat:'商品概要',q:'フラット35の借入期間は最短15年（申込本人または連帯債務者が満60歳以上の場合は10年）である。',a:true,exp:'出典：www.flat35.com（ご利用条件）最短は15年（ただし、申込本人や連帯債務者が満60歳以上の場合は10年）です。完済時年齢は満80歳以下が上限。'} ,
+  {cat:'商品概要',q:'フラット35の融資割合が9割を超えると融資を受けることができない。',a:false,exp:'出典：www.flat35.com（ご利用条件）融資割合9割超でも融資は可能ですが、借入金利が高くなります（融資率9割以下・9割超で金利段階が異なる）。'} ,
+  {cat:'商品概要',q:'フラット35では、土地取得費用を建設費に含めて借入れすることができる。',a:true,exp:'出典：www.flat35.com（ご利用条件）「土地取得費に対する借入れを希望する場合は、その費用を含みます」と明記されています。'} ,
+  {cat:'商品概要',q:'フラット35は、第三者に賃貸する目的の投資用物件の取得資金にも利用できる。',a:false,exp:'出典：www.flat35.com（ご利用条件）「フラット35は第三者に賃貸する目的の物件などの投資用物件の取得資金にはご利用いただけません」と明記されています。'} ,
+  {cat:'商品概要',q:'フラット35の繰上返済には手数料がかからない。',a:true,exp:'出典：www.flat35.com（4つのメリット）フラット35の繰上返済手数料は無料です。これも民間ローンとの差別化ポイントの一つです。'} ,
+  {cat:'融資対象物件',q:'フラット35の対象となる一戸建て住宅（連続建て・重ね建てを含む）の床面積は70m2以上が必要である。',a:false,exp:'出典：www.flat35.com（2026年度制度改正） 2026年4月以降の物件検査申請分から、一戸建て住宅等の床面積要件が「70㎡以上」から「50㎡以上」に緩和されました。'} ,
+  {cat:'融資対象物件',q:'フラット35の対象となるマンション等（地上3階以上の共同建て住宅）の専有面積は30m2以上が必要である。',a:true,exp:'出典：www.flat35.com（対象となる住宅・技術基準）マンション等（地上3階以上の共同建て住宅）の住宅規模は専有面積30㎡以上が要件です。'} ,
+  {cat:'融資対象物件',q:'フラット35の融資対象は新築住宅のみであり、中古住宅には利用できない。',a:false,exp:'出典：www.flat35.com（対象となる住宅・技術基準）中古住宅もフラット35の対象です。ただし住宅金融支援機構が定める技術基準に適合した適合証明書の取得が必要です。'} ,
+  {cat:'融資対象物件',q:'店舗付き住宅の場合、住宅部分の床面積が非住宅部分の床面積以上であればフラット35を利用できる。',a:true,exp:'出典：www.flat35.com（ご利用条件）「店付き住宅などの併用住宅の場合は、住宅部分の床面積が非住宅部分（店舗、事務所など）の床面積以上であることが必要です」。'} ,
+  {cat:'融資対象物件',q:'フラット35の適合証明書は、取扱金融機関が発行する。',a:false,exp:'出典：www.flat35.com（対象となる住宅・技術基準）適合証明書は「第三者である適合証明検査機関または適合証明技術者が物件検査においてチェックし」交付します。取扱金融機関ではありません。'} ,
+  {cat:'融資対象物件',q:'中古住宅について、新築時にフラット35の適合証明書を取得していれば、中古住宅用の適合証明書の取得は不要である。',a:false,exp:'出典：www.flat35.com（対象となる住宅・技術基準）「新築時に適合証明書を取得している場合であっても、原則として、中古住宅の適合証明書の取得が必要です」。'} ,
+  {cat:'融資対象物件',q:'フラット35の融資対象住宅は、住宅金融支援機構が定める技術基準に適合していることが必要である。',a:true,exp:'出典：www.flat35.com（対象となる住宅・技術基準）フラット35の対象となるには、住宅金融支援機構の定める技術基準（省エネ・耐久性等）に適合した物件検査に合格する必要があります。'} ,
+  {cat:'融資対象物件',q:'フラット35では火災保険への加入が全取扱金融機関で必須とされており、質権設定も義務づけられている。',a:false,exp:'出典：www.flat35.com（ご利用条件）「借入対象となる住宅への火災保険の付保および火災保険金請求権に対する質権設定の有無については、取扱金融機関によって異なります」。'} ,
+  {cat:'融資対象物件',q:'フラット35は、申込本人またはその親族が居住する住宅が対象であり、賃貸目的の物件には利用できない。',a:true,exp:'出典：www.flat35.com（ご利用条件）機構が申込本人またはご親族の方が実際にお住まいになっていることを定期的に確認します。投資用途での利用が判明した場合は一括返済となります。'} ,
+  {cat:'フラット35S',q:'フラット35Sとは、省エネルギー性・耐震性などを備えた質の高い住宅を取得する場合に、フラット35の借入金利を一定期間引き下げる制度である。',a:true,exp:'出典：www.flat35.com（フラット35S）「省エネルギー性、耐震性などを備えた質の高い住宅を取得する場合に、フラット35の借入金利を一定期間引き下げる制度です」。'} ,
+  {cat:'フラット35S',q:'フラット35Sは、2022年10月以降の申込分からポイント制による金利引下げ方式に変更された。',a:true,exp:'出典：www.flat35.com（制度改正一覧）2022年10月以降の借入申込受付分から、金利引下げ方法が「ポイント制」に変更されました。ポイント数に応じて引下げ幅と期間が決まります。'} ,
+  {cat:'フラット35S',q:'フラット35Sは、借換融資にも利用できる。',a:false,exp:'出典：www.flat35.com（フラット35S）「フラット35Sは新築住宅の建設・購入および中古住宅の購入の際にご利用いただけます（フラット35借換融資には利用できません。）」。'} ,
+  {cat:'フラット35S',q:'フラット35Sの利用にはフラット35Sの技術基準に適合することを示す適合証明書の取得が必要である。',a:true,exp:'出典：www.flat35.com（フラット35S）「フラット35Sの住宅は、第三者機関である検査機関などによる検査（設計検査・現場検査）を通じて、住宅金融支援機構が定める技術基準に適合することを確認しています」。'} ,
+  {cat:'フラット35S',q:'フラット35Sは中古住宅の購入には利用できない。',a:false,exp:'出典：www.flat35.com（フラット35S）フラット35Sは「新築住宅の建設・購入および中古住宅の購入の際にご利用いただけます」。'} ,
+  {cat:'フラット35S',q:'フラット35Sはフラット35リノベと併用できる。',a:false,exp:'出典：www.flat35.com（フラット35S）「フラット35Sはフラット35リノベとの併用はできません」と明記されています。'} ,
+  {cat:'フラット35S',q:'フラット35維持保全型は、フラット35の金利引下げメニューの一つである。',a:true,exp:'出典：www.flat35.com（金利引下げメニュー） 2025年4月現在、金利引下げメニューは「子育てプラス・中古プラス・フラット35S・リノベ・維持保全型・地域連携型・地方移住支援型」があります。維持保全型はそのうちの一つです。'} ,
+  {cat:'フラット35S',q:'フラット35Sには予算金額があり、予算に達した場合は受付が終了する。',a:true,exp:'出典：www.flat35.com（フラット35S）「フラット35Sには予算金額があり、予算金額に達する見込みとなった場合は、受付を終了させていただきます」。受付終了日は終了約3週間前にサイトで告知されます。'} ,
+  {cat:'申込・審査手続き',q:'フラット35は住宅金融支援機構の窓口に直接申込む。',a:false,exp:'出典：www.flat35.com（融資手続・必要書類）「フラット35の取扱金融機関へ借入れのお申込みをしていただきます」。機構へ直接申込む制度ではありません。'} ,
+  {cat:'申込・審査手続き',q:'フラット35の申込時の年齢要件は、申込本人が満70歳未満であることである（親子リレー返済を利用する場合を除く）。',a:true,exp:'出典：www.flat35.com（ご利用条件）「申込時の年齢が満70歳未満の方（親子リレー返済をご利用の場合は、満70歳以上の方も申込み可）」が要件です。'} ,
+  {cat:'申込・審査手続き',q:'年収400万円以上の場合の総返済負担率の上限は35%以下である。',a:true,exp:'出典：www.flat35.com（ご利用条件）年収に占める年間合計返済額の割合（総返済負担率）は、年収400万円未満→30%以下、400万円以上→35%以下です。'} ,
+  {cat:'申込・審査手続き',q:'年収400万円未満の場合の総返済負担率の上限は35%以下である。',a:false,exp:'出典：www.flat35.com（ご利用条件）年収400万円未満の場合は30%以下が基準です。35%以下は年収400万円以上の場合の基準であり混同しないよう注意が必要です。'} ,
+  {cat:'申込・審査手続き',q:'フラット35は日本国籍の方のほか、永住許可を受けている方または特別永住者の方も申込できる。',a:true,exp:'出典：www.flat35.com（ご利用条件）「日本国籍の方、永住許可を受けている方または特別永住者の方」が申込対象です。'} ,
+  {cat:'申込・審査手続き',q:'フラット35では、物件検査の申請と借入れの申込みは必ず物件検査を先に行わなければならない。',a:false,exp:'出典：www.flat35.com（融資手続・必要書類）「物件検査の申請と借入れのお申込みの順序は問いません」とされています。ただし、資金受取前に適合証明書の提出が必要です。'} ,
+  {cat:'申込・審査手続き',q:'フラット35の収入合算では、連帯債務者の収入を全額合算して申込むことができる。',a:true,exp:'出典：www.flat35.com（商品ラインナップ）「借入希望額に対してひとりの年収で不足する場合に、ご夫婦の年収を全額合わせて申し込むことができます」。'} ,
+  {cat:'申込・審査手続き',q:'親子リレー返済では、後継者の年齢を基準に最長35年の借入期間を設定できる。',a:true,exp:'出典：www.flat35.com（商品ラインナップ）親子リレー返済は「お子さま等、一定の条件を満たす方を後継者として、二世代で返済する制度」で、後継者の年齢を基準に借入期間が設定されます。'} ,
+  {cat:'申込・審査手続き',q:'20年以下の借入期間を選択した場合、返済途中で借入期間を21年以上に変更できる。',a:false,exp:'出典：www.flat35.com（ご利用条件）「20年以下の借入期間を選択した場合は、原則として、返済途中で借入期間を21年以上に変更できません」。'} ,
+  {cat:'団体信用生命保険',q:'2017年10月1日以降にフラット35を申込んだ場合、団体信用生命保険（新機構団信）の費用は毎月の返済に組み込まれており、年払いの特約料は不要である。',a:true,exp:'出典：www.flat35.com（新機構団体信用生命保険制度）「平成29年10月1日以後にお申込みいただいたお客さまから、月々のフラット35のお支払いに団体信用生命保険の加入に必要な費用が含まれるため、年払いでの団信特約料のお支払いが不要になりました」。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信の加入要件として、申込書兼告知書の記入日現在で満15歳以上満70歳未満であることが必要である。',a:true,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「新機構団体信用生命保険制度申込書兼告知書の記入・入力日現在、満15歳以上満70歳未満の方」が加入要件です。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信への加入はフラット35の利用条件であり、健康上の理由があっても必ず加入しなければならない。',a:false,exp:'出典：www.flat35.com（新機構団体信用生命保険制度）「健康上の理由その他の事情で団体信用生命保険に加入されない場合も、フラット35はご利用いただけます」。加入は任意です。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信では、加入者が死亡した場合や所定の身体障害状態になった場合に、住宅の持分や返済割合にかかわらず残りのローンが弁済される。',a:true,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「死亡したとき、または身体障害者福祉法に定める障害の級別が1級または2級の障害に該当し身体障害者手帳の交付を受けたとき」に、住宅の持分・返済割合にかかわらず残りのローンが弁済されます。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信の保障は満80歳の誕生日の属する月の末日まで続く。',a:true,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「満80歳の誕生日の属する月の末日まで保障されます」。80歳到達後は保障が終了しますが、借入金利は変更されません。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信には、一般の新機構団信と新3大疾病付機構団信の2種類がある。',a:true,exp:'出典：www.flat35.com（新機構団体信用生命保険制度）「フラット35の団体信用生命保険には、新機構団信と新3大疾病付機構団信の2つがあります」。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信では、がんと診断された場合のほか、公的介護保険制度に定める要介護2以上の状態になった場合も残りのローンが免除される。',a:true,exp:'出典：www.flat35.com（新機構団体信用生命保険制度）新3大疾病付機構団信は「死亡・所定の身体障害状態に加え、3大疾病が原因で一定の要件に該当した場合および公的介護保険制度に定める要介護2以上までのいずれかの状態などになられた場合も残りの返済が不要」。'} ,
+  {cat:'団体信用生命保険',q:'連帯債務者であるご夫婦は「デュエット（ペア連生団信）」に加入でき、どちらかが万一の場合は残りのローンが全額弁済される。',a:true,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「連帯債務者であるご夫婦ふたりで「デュエット」（ペア連生団信）に加入できます。ご夫婦でどちらかが万一の場合は、住宅の持分、返済割合などにかかわらず、以後のフラット35の債務の返済が不要となります」。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信では「デュエット（ペア連生団信）」を利用できる。',a:false,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「新3大疾病付機構団信では「デュエット」をご利用いただけません」。デュエットは新機構団信のみで利用可能です。'} ,
+  {cat:'団体信用生命保険',q:'機構団信（旧制度：2017年9月30日以前申込分）の特約料は、毎年ローン残高に応じて計算され、返済が進むにつれて減少する。',a:true,exp:'出典：www.flat35.com（特約料について）旧制度の機構団信特約料は「住宅ローン残高等と特約料率により算出した額」となり、残高が減ると特約料も減少します。2017年10月以降の申込は月払い方式に変更されています。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信では、住宅金融支援機構が保険契約者・保険金受取人となり、加入者が被保険者となる。',a:true,exp:'出典：www.flat35.com（新機構団体信用生命保険制度） 「住宅金融支援機構が保険契約者・保険金受取人、【フラット35】の団体信用生命保険のご加入者が被保険者となり、支払われた保険金が債務の返済に充当される仕組みです」。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信において、身体障害者手帳の交付を受けた場合の保障対象となるのは、身体障害者福祉法に定める障害の級別が1級または2級の場合のみである。',a:true,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容） 「身体障害者福祉法に定める障害の級別が１級または２級の障害に該当し、身体障害者手帳の交付を受けたとき」に保険金が支払われます。3級以下は対象外です。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信には「高度障害保険金」の取扱いがある。',a:false,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容） 「新機構団信・新３大疾病付機構団信では、所定の高度障害状態になられた場合にお支払いする高度障害保険金の取扱いはありません」と明記されています。'} ,
+  {cat:'団体信用生命保険',q:'「デュエット（ペア連生団信）」を利用できるのは、戸籍上の夫婦に限られる。',a:false,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容） 「デュエットをご利用できるご夫婦には、戸籍上の夫婦のほか、婚約関係にある方、内縁関係にある方、同性パートナーの関係にある方を含みます」と明記されています。'} ,
+  {cat:'団体信用生命保険',q:'新機構団信に加入できない健康上の理由がある場合、フラット35自体も利用できない。',a:false,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容） 「健康上の理由その他の事情で団体信用生命保険に加入されない場合も【フラット35】をご利用いただけます」と明記されています。団信未加入でもフラット35は利用可能です。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信の加入年齢要件は、満15歳以上満51歳未満である。',a:true,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 「申込書兼告知書の記入・入力日現在、満15歳以上満51歳未満の方」が加入要件です。新機構団信（満70歳未満）より年齢上限が低い点に注意が必要です。'} ,
+  {cat:'団体信用生命保険',q:'過去にがんと診断されたことがある方は、新3大疾病付機構団信に加入できない。',a:true,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 「過去にがんと診断された方は新３大疾病付機構団信にご加入いただけません」と明記されています。この場合は新機構団信（一般）への加入を検討します。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信の保障は、満75歳の誕生日の属する月の末日まで続き、その翌月1日からは新機構団信の保障内容に切り替わる。',a:true,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 「満75歳の誕生日の属する月の末日まで保障されます。満75歳の誕生日の属する月の翌月１日からは新機構団信の保障内容になります」。新機構団信（満80歳まで）より保障期間が短い点に注意が必要です。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信の保障対象には、急性心筋梗塞・脳卒中が含まれる。',a:true,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 3大疾病は「がん・急性心筋梗塞・脳卒中」です。これらが原因で一定の要件に該当した場合に保険金が支払われます。'} ,
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信では、公的介護保険制度に定める要介護1以上の状態になった場合も保障される。',a:false,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 「公的介護保険制度に定める要介護２以上の状態または所定の要介護状態に該当したとき」が保障対象です。要介護1は対象外です。'} ,
+  {cat:'フラット35S',q:'フラット35 中古プラスとは、良質な中古住宅を取得する場合にフラット35の借入金利を引き下げる制度であり、2025年4月以降の物件検査申請分から適用される。',a:true,exp:'出典：www.flat35.com（2025年度制度改正） 2025年4月以降の物件検査申請分から、良質な中古住宅取得時にフラット35の借入金利を引き下げる「中古プラス」が新設されました。'} ,
+  {cat:'フラット35S',q:'フラット35 中古プラスとフラット35 維持保全型（インスペクション実施住宅）は併用できる。',a:false,exp:'出典：www.flat35.com（2025年度制度改正） 「中古プラスと維持保全型（インスペクション実施住宅に限ります）の併用はできません」と明記されています。'} ,
+  {cat:'フラット35S',q:'2025年4月以降もフラット35 リノベを利用するにはリフォーム工事金額の要件を満たす必要がある。',a:false,exp:'出典：www.flat35.com（2025年度制度改正） 2025年4月以降の物件検査申請分から、リフォーム工事金額の要件が廃止されました。'} ,
+  {cat:'商品概要',q:'フラット35の借入金利は、申込時ではなく資金受取時の金利が適用される。',a:true,exp:'出典：www.flat35.com（ご利用条件） 「申込時ではなく、資金受取時の金利となります」と明記されています。申込後に金利が変動した場合、資金受取時の金利が適用されます。'} ,
+  {cat:'申込・審査手続き',q:'2025年10月以降、フラット35の親子リレー返済の後継者は、申込本人の直系卑属またはその配偶者で定期的収入があれば要件を満たす。',a:true,exp:'出典：www.flat35.com（2025年10月制度改正） 後継者の要件として「申込みご本人の子・孫など（直系卑属）またはその配偶者で定期的収入のある方」が明記されています。'} ,
+  {cat:'商品概要',q:'2026年4月以降の資金実行分から、フラット35の融資限度額は1億2,000万円に引き上げられた。',a:true,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 物価高による住宅価格の上昇に対応するため、2026年4月以降の資金実行分から融資限度額が「8,000万円→1億2,000万円」に引き上げられました。'} ,
+  {cat:'融資対象物件',q:'2026年4月以降の物件検査申請分から、フラット35の対象となる一戸建て住宅の床面積要件が70㎡以上から50㎡以上に緩和された。',a:true,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 住まい選びの多様化に対応するため、2026年4月以降の物件検査申請分から一戸建て住宅等の床面積要件が「70㎡以上→50㎡以上」に緩和されました。'} ,
+  {cat:'フラット35S',q:'2026年3月以降の資金実行分から、フラット35 子育てプラスが借換融資にも利用できるようになった。',a:true,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 変動金利から固定金利への借換ニーズに対応するため、2026年3月以降の資金実行分から子育てプラスが借換融資にも適用可能となりました。'} ,
+  {cat:'フラット35S',q:'フラット35 子育てプラスは従来から借換融資にも利用できた。',a:false,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 子育てプラスの借換融資への適用は2026年3月からの新制度です。それ以前は新規借入れのみが対象でした。'} ,
+  // ── フラット50 ──
+  {cat:'フラット50',q:'フラット50の借入期間は、36年以上50年以内（1年単位）である。',a:true,exp:'出典：www.flat35.com（フラット50ご利用条件）フラット50の借入期間は「36年以上50年以内（1年単位）」です。フラット35（15年以上35年以内）より長期の返済が可能です。'} ,
+  {cat:'フラット50',q:'フラット50の申込時の年齢要件は、申込本人が満44歳未満であることである（親子リレー返済を利用する場合を除く）。',a:true,exp:'出典：www.flat35.com（フラット50ご利用条件）「申込時の年齢が満44歳未満の方（親子リレー返済をご利用の場合は満44歳以上でも申込み可）」が要件です。フラット35（満70歳未満）より年齢上限が低い点に注意が必要です。'} ,
+  {cat:'フラット50',q:'フラット50の完済時年齢の上限は満80歳以下であり、フラット35と同じである。',a:true,exp:'出典：www.flat35.com（フラット50ご利用条件）完済時年齢の上限はフラット35と同様に「満80歳以下」です。そのため申込時年齢の上限が44歳未満（＝80歳－36年）と低く設定されています。'} ,
+  {cat:'フラット50',q:'フラット50は、すべての住宅を対象としており、フラット35と同様の物件であれば利用できる。',a:false,exp:'出典：www.flat35.com（フラット50対象となる住宅）フラット50の対象は、国が認定する「長期優良住宅」（住宅の品質確保の促進等に関する法律等に基づく認定制度）等、一定の耐久性・省エネ性・耐震性の基準を満たす住宅に限定されます。フラット35より対象住宅の要件が厳しく、すべての住宅が対象となるわけではありません。'} ,
+  {cat:'フラット50',q:'フラット50の借入金利は、フラット35より低く設定される。',a:false,exp:'出典：www.flat35.com（フラット50金利情報）フラット50の借入金利はフラット35より高く設定されます。長期リスクに対応するための上乗せがあるため、月々の返済額を抑えたい場合でも金利コストに注意が必要です。'} ,
+  {cat:'フラット50',q:'フラット50では、融資割合が物件価格の9割を超える場合、フラット35やフラット20と併用することで物件価格まで借入れすることができる。',a:true,exp:'出典：www.flat35.com（フラット50ご利用条件）フラット50単独の融資割合は物件価格の9割以内ですが、「フラット35またはフラット20との併用により、物件価格（消費税を含む）まで借り入れることができます」。'} ,
+  {cat:'フラット50',q:'2025年10月以降、管理計画認定マンションおよび予備認定マンションもフラット50の対象に追加された。',a:true,exp:'出典：www.flat35.com（2025年度制度改正）2025年10月以降の資金実行分から、対象住宅にフラット35と同様に「管理計画認定マンション」および「予備認定マンション」が追加されました。'} ,
+  {cat:'フラット50',q:'フラット50において最長50年の借入期間を設定できるのは、申込時に30歳未満の方のみである。',a:true,exp:'出典：www.flat35.com（フラット50ご利用条件）「30歳以上の方の借入期間の上限は「80歳－申込時の年齢（1年未満切上げ）」となるため、最長50年（=80歳－30歳）を設定できるのは申込時30歳未満の方に限られます。'} ,
+  {cat:'フラット50',q:'フラット50の床面積要件は、一戸建て住宅の場合70㎡以上、マンション等の場合30㎡以上である。',a:false,exp:'出典：www.flat35.com（フラット50対象となる住宅）2026年4月以降の物件検査申請分から、一戸建て住宅等の床面積要件がフラット35と同様に「50㎡以上」に緩和されました。マンション等（共同建て住宅）は「30㎡以上」のままです。'}
+];
+const CHOICE = [
+  // ── 修正①：融資限度額 ── 2026年4月改正後の正解は「1億2,000万円以下（1万円単位）」(a:2)
+  {cat:'商品概要',q:'フラット35の融資限度額として正しい金額はどれか（2026年4月以降の資金実行分）。',opts:['8,000万円以下（1万円単位）','1億円以下','1億2,000万円以下（1万円単位）','制限なし'],a:2,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 2026年4月以降の資金実行分から融資限度額が「1億2,000万円以下（1万円単位）」に引き上げられました。8,000万円は2026年3月以前の旧上限額です。'},
+  {cat:'商品概要',q:'フラット35の借入期間として正しいものはどれか（申込本人が60歳未満・連帯債務者なしの場合）。',opts:['10年以上35年以内','15年以上35年以内','15年以上40年以内','20年以上35年以内'],a:1,exp:'出典：www.flat35.com（ご利用条件）借入期間は15年以上35年以内です（完済時年齢が満80歳以下となる年数が上限。申込本人または連帯債務者が満60歳以上の場合は10年から可）。なお、国が認定する「長期優良住宅」等を対象とした別商品「フラット50」では36年以上50年以内（最長50年）の借入期間が可能です。'},
+  {cat:'商品概要',q:'フラット35の返済方法として、機構公式サイトに記載されているものはどれか。',opts:['元利均等返済のみ','元金均等返済のみ','元利均等・元金均等の両方を選択可','変動・固定を選択可'],a:2,exp:'出典：www.flat35.com（ご利用条件）「元利均等毎月払いまたは元金均等毎月払いを選択できます。6か月ごとのボーナス払い（借入金額の40%以内）も併用できます」。'},
+  {cat:'商品概要',q:'フラット35において融資割合が9割を超えた場合の扱いとして正しいものはどれか。',opts:['融資を受けられない','融資は可能だが金利が高くなる','金利が低くなる','審査基準が緩和される'],a:1,exp:'出典：www.flat35.com（ご利用条件）融資率9割超でも融資は可能ですが、借入金利が高くなります（9割以下と9割超で金利段階が異なります）。'},
+  // ── 修正②：一戸建て床面積 ── 2026年4月改正後の正解は「50m2以上」(a:0)
+  {cat:'融資対象物件',q:'フラット35における一戸建て住宅（連続建て・重ね建てを含む）の床面積要件として正しいのはどれか（2026年4月以降の物件検査申請分）。',opts:['50m2以上','70m2以上','100m2以上','制限なし'],a:0,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 2026年4月以降の物件検査申請分から「50㎡以上」に緩和されました。70㎡以上は2026年3月以前の旧要件です（マンション等の専有面積30㎡以上は変更なし）。'},
+  {cat:'融資対象物件',q:'マンション等（地上3階以上の共同建て住宅）のフラット35における専有面積の最低要件はどれか。',opts:['18m2以上','25m2以上','30m2以上','40m2以上'],a:2,exp:'出典：www.flat35.com（対象となる住宅・技術基準）マンション等共同住宅の住宅規模は専有面積30㎡以上が要件です。'},
+  {cat:'融資対象物件',q:'フラット35の適合証明書を発行できる者として機構公式サイトに記載されているのはどれか。',opts:['取扱金融機関の担当者','住宅金融支援機構の職員','適合証明検査機関または適合証明技術者','宅地建物取引士'],a:2,exp:'出典：www.flat35.com（対象となる住宅・技術基準）「第三者である適合証明検査機関または適合証明技術者が物件検査においてチェックします」。取扱金融機関や機構が発行するものではありません。'},
+  {cat:'フラット35S',q:'フラット35Sの金利引下げ方式（2022年10月以降）として正しいのはどれか。',opts:['A/Bプランによる固定引下げ幅','ポイント制（ポイント数に応じて引下げ幅と期間が決まる）','一律年0.25%引下げ','取扱金融機関が独自に決定'],a:1,exp:'出典：www.flat35.com（制度改正一覧・金利引下げメニュー）「2022年10月以降の借入申込受付分から金利引下げ方法をポイント制に変更」。ポイント数に応じて引下げ幅と引下げ期間が決まります。'},
+  {cat:'フラット35S',q:'フラット35Sの利用に関する説明として正しいのはどれか。',opts:['借換融資にも利用できる','フラット35リノベとの併用ができる','予算金額があり上限達成時に受付終了する','中古住宅には利用できない'],a:2,exp:'出典：www.flat35.com（フラット35S）「フラット35Sには予算金額があり、予算金額に達する見込みとなった場合は、受付を終了させていただきます」。借換不可、リノベ併用不可、中古も利用可能です。'},
+  {cat:'申込・審査手続き',q:'フラット35において、年収400万円未満の場合の総返済負担率の上限として正しいものはどれか。',opts:['25%以下','30%以下','35%以下','40%以下'],a:1,exp:'出典：www.flat35.com（ご利用条件）年収400万円未満→30%以下、400万円以上→35%以下が基準です。他のローンも含めた全返済額で計算します。'},
+  {cat:'申込・審査手続き',q:'フラット35の申込時の年齢要件として正しいのはどれか（通常の場合）。',opts:['満60歳未満','満65歳未満','満70歳未満','満75歳未満'],a:2,exp:'出典：www.flat35.com（ご利用条件）申込時の年齢は満70歳未満が条件です（親子リレー返済を利用する場合は満70歳以上でも可。完済時年齢は満80歳以下）。'},
+  {cat:'申込・審査手続き',q:'20年以下の借入期間を選択した場合の変更ルールとして正しいのはどれか。',opts:['いつでも21年以上に変更できる','原則として21年以上に変更できない','金融機関の承認があれば変更できる','5年以上経過後は変更できる'],a:1,exp:'出典：www.flat35.com（ご利用条件）「20年以下の借入期間を選択した場合は、原則として、返済途中で借入期間を21年以上に変更できません」。'},
+  {cat:'団体信用生命保険',q:'新機構団信（2017年10月以降申込）の加入年齢要件として正しいのはどれか。',opts:['満50歳未満','満60歳未満','満15歳以上満70歳未満','満18歳以上満65歳未満'],a:2,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「申込書兼告知書の記入・入力日現在、満15歳以上満70歳未満の方」が加入要件です（幹事生命保険会社の加入承諾も必要）。'},
+  {cat:'団体信用生命保険',q:'新機構団信の保障が終了する年齢として正しいのはどれか。',opts:['満70歳','満75歳','満80歳','ローン完済時'],a:2,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「満80歳の誕生日の属する月の末日まで保障されます」。80歳到達後も借入金利は変更されません。'},
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信で保障される事由の組合せとして正しいのはどれか。',opts:['死亡のみ','死亡・所定の身体障害状態','死亡・所定の身体障害・3大疾病・所定の要介護状態','死亡・所定の身体障害・8大疾病'],a:2,exp:'出典：www.flat35.com（新機構団体信用生命保険制度）新3大疾病付機構団信は「死亡・所定の身体障害状態に加え、3大疾病が原因で一定の要件に該当した場合および公的介護保険制度に定める要介護2から要介護5までのいずれかの状態などになられた場合も残りの返済が不要」。'},
+  {cat:'団体信用生命保険',q:'新機構団信において「デュエット（ペア連生団信）」を利用できるのはどの場合か。',opts:['新機構団信・新3大疾病付機構団信どちらでも可','新機構団信のみ','新3大疾病付機構団信のみ','どちらも利用不可'],a:1,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容）「連帯債務者であるご夫婦ふたりでデュエット（ペア連生団信）に加入できます」。ただし「新3大疾病付機構団信ではデュエットをご利用いただけません」。'},
+  {cat:'団体信用生命保険',q:'新3大疾病付機構団信と新機構団信（一般）の相違点として正しいものはどれか。',opts:['新3大疾病付機構団信の加入年齢上限は満70歳未満で、新機構団信より高い','新3大疾病付機構団信は保障が満75歳まで、その後は新機構団信の保障に切り替わる','新3大疾病付機構団信ではデュエット（ペア連生団信）を利用できる','新3大疾病付機構団信では高度障害保険金の取扱いがある'],a:1,exp:'出典：www.flat35.com（新３大疾病付機構団信の加入要件・保障内容） 正解はB。新3大疾病付機構団信の保障は「満75歳の誕生日の属する月の末日まで」で、その後は新機構団信の保障内容（満80歳まで）に切り替わります。Aは誤り（加入上限は満51歳未満）。Cは誤り（デュエット不可）。Dは誤り（高度障害保険金の取扱いなし）。'},
+  {cat:'団体信用生命保険',q:'新機構団信における「デュエット（ペア連生団信）」に関する記述として正しいものはどれか。',opts:['デュエットは戸籍上の夫婦のみが利用できる','デュエットは新3大疾病付機構団信でも利用できる','デュエット加入時は、どちらかが万一の場合、持分・返済割合によらず残債が全額弁済される','デュエットに加入できるのは連帯保証人の関係にある夫婦に限られる'],a:2,exp:'出典：www.flat35.com（新機構団信の加入要件・保障内容） 正解はC。「どちらかが万一の場合は、住宅の持分、返済割合などにかかわらず、以後の【フラット35】の債務の返済が不要となります」。Aは誤り（婚約・内縁・同性パートナーも対象）。Bは誤り（新3大疾病付ではデュエット不可）。Dは誤り（連帯債務者が対象）。'},
+  {cat:'フラット35S',q:'2025年4月に新設された「フラット35 中古プラス」に関する記述として正しいものはどれか。',opts:['新築住宅取得時の金利引下げ制度である','良質な中古住宅取得時にフラット35の借入金利を引き下げる制度である','中古プラスと維持保全型（インスペクション実施住宅）は併用できる','2025年10月以降の物件検査申請分から適用された'],a:1,exp:'出典：www.flat35.com（2025年度制度改正） 中古プラスは「良質な中古住宅取得時の金利引下げ制度」で「2025年4月以降の物件検査申請分から適用」。維持保全型（インスペクション実施）との併用は不可。'},
+  {cat:'商品概要',q:'2026年4月以降のフラット35の融資限度額として正しいものはどれか。',opts:['8,000万円以下（1万円単位）','1億円以下（1万円単位）','1億2,000万円以下（1万円単位）','制限なし'],a:2,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 2026年4月以降の資金実行分から「1億2,000万円以下（1万円単位）」に引き上げられました。8,000万円は2026年3月以前の旧上限額です。'},
+  {cat:'融資対象物件',q:'2026年4月以降のフラット35における一戸建て住宅の床面積要件として正しいものはどれか。',opts:['40㎡以上','50㎡以上','60㎡以上','70㎡以上'],a:1,exp:'出典：www.flat35.com（令和7年度補正予算に伴う制度改正） 2026年4月以降の物件検査申請分から「50㎡以上」に緩和されました。70㎡以上は2026年3月以前の旧要件です。'} ,
+  // ── フラット50 択一 ──
+  {cat:'フラット50',q:'フラット50の借入期間として正しいものはどれか。',opts:['15年以上50年以内','25年以上50年以内','36年以上50年以内','40年以上50年以内'],a:2,exp:'出典：www.flat35.com（フラット50ご利用条件）フラット50の借入期間は「36年以上50年以内（1年単位）」です。フラット35（15年以上35年以内）と混同しないよう注意が必要です。'} ,
+  {cat:'フラット50',q:'フラット50の申込時年齢要件として正しいのはどれか（通常の場合）。',opts:['満40歳未満','満44歳未満','満50歳未満','満70歳未満'],a:1,exp:'出典：www.flat35.com（フラット50ご利用条件）申込時の年齢は「満44歳未満」が条件です（完済時年齢80歳以下、借入期間最短36年のため）。フラット35の満70歳未満より年齢上限が低い点に注意が必要です。'} ,
+  {cat:'フラット50',q:'フラット50の対象住宅として正しいものはどれか。',opts:['すべての住宅（フラット35と同様）','新築住宅のみ（中古住宅は対象外）','国が認定する長期優良住宅等、一定基準を満たす優良な住宅','マンションのみ（一戸建ては対象外）'],a:2,exp:'出典：www.flat35.com（フラット50対象となる住宅）フラット50の対象は「国が認定する長期優良住宅」（長期優良住宅の普及の促進に関する法律に基づく認定制度）等、耐久性・省エネ性・耐震性の基準を満たす住宅です。2025年10月以降は管理計画認定マンション・予備認定マンションも対象に追加されました。フラット35より対象住宅の要件が厳しい点が特徴です。'} ,
+  {cat:'フラット50',q:'フラット50とフラット35の違いとして正しい記述はどれか。',opts:['フラット50の方が借入金利が低い','フラット50の申込時年齢上限はフラット35より高い','フラット50はすべての住宅が対象だが、フラット35は長期優良住宅のみが対象','フラット50の借入期間はフラット35より長く、36年以上50年以内である'],a:3,exp:'出典：www.flat35.com（フラット50・フラット35ご利用条件比較）フラット50（36〜50年）はフラット35（15〜35年）より借入期間が長いです。金利はフラット50の方が高め。申込年齢上限はフラット50（満44歳未満）の方が低い。対象住宅はフラット50の方が厳しく、国の認定制度に基づく「長期優良住宅」等に限定されます（フラット35はより幅広い住宅が対象）。'}
+];
+// ════════════════════════════════════════
+//  SCORE STORAGE（メモリ内・全端末対応）
+// ════════════════════════════════════════
+// ── スコア履歴：メモリ内保存（localStorage不使用・iOS含む全端末対応）──
+let _scoreHistory = [];
+function loadHistory() { return _scoreHistory; }
+function saveHistory(history) { _scoreHistory = history; }
+function recordScore(mode, cat, correct, total, score) {
+  const history = loadHistory();
+  history.unshift({
+    date: new Date().toLocaleDateString('ja-JP', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+    mode, cat, correct, total, score,
+    pct: total > 0 ? Math.round(correct/total*100) : 0
+  });
+  if (history.length > 50) history.length = 50;
+  saveHistory(history);
+}
+function clearHistory() {
+  if (confirm('成績記録をすべて削除しますか？')) {
+    _scoreHistory = [];
+    renderScoresTab();
+  }
+}
+// ════════════════════════════════════════
+//  TAB SWITCH
+// ════════════════════════════════════════
+function showTab(tab) {
+  document.getElementById('tabQuiz').style.display   = tab==='quiz'   ? '' : 'none';
+  document.getElementById('tabScores').style.display = tab==='scores' ? '' : 'none';
+  document.querySelectorAll('.top-tab').forEach((t,i) =>
+    t.classList.toggle('on', ['quiz','scores'][i] === tab));
+  if (tab === 'scores') renderScoresTab();
+}
+// ════════════════════════════════════════
+//  SCORES TAB
+// ════════════════════════════════════════
+function renderScoresTab() {
+  const el      = document.getElementById('scoresContent');
+  const history = loadHistory();
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ei">📊</div>
+      <p>まだ記録がありません<br><small>クイズを完了すると自動保存されます</small></p></div>`;
+    return;
+  }
+  const bestMap = {};
+  for (const h of history) {
+    const key = h.cat + '_' + h.mode;
+    if (!bestMap[key] || h.pct > bestMap[key].pct) bestMap[key] = h;
+  }
+  const bests = Object.values(bestMap).sort((a,b) => b.pct - a.pct);
+  const totalQ    = history.reduce((s,h) => s + (h.total||0), 0);
+  const totalCorr = history.reduce((s,h) => s + (h.correct||0), 0);
+  const avgPct    = totalQ > 0 ? Math.round(totalCorr/totalQ*100) : 0;
+  const bestScore = Math.max(...history.map(h=>h.score||0));
+  const medals = ['🥇','🥈','🥉'];
+  const rankLabel = (pct) => pct>=90?'S':pct>=75?'A':pct>=60?'B':'C';
+  const rankClass = (pct) => pct>=90?'rs':pct>=75?'ra':pct>=60?'rb':'rc';
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
+      <div class="stat stat-correct">
+        <div class="stat-val" style="color:var(--cyan)">${history.length}</div>
+        <div class="stat-lbl">回プレイ</div>
+      </div>
+      <div class="stat stat-score">
+        <div class="stat-val" style="color:var(--green)">${avgPct}%</div>
+        <div class="stat-lbl">平均正答率</div>
+      </div>
+      <div class="stat stat-streak">
+        <div class="stat-val" style="color:var(--gold)">${bestScore}</div>
+        <div class="stat-lbl">最高スコア</div>
+      </div>
+    </div>
+    <div class="best-section">
+      <div class="best-title">📌 カテゴリ別ベスト</div>
+      ${bests.map((h,i) => `
+        <div class="best-card">
+          <div class="best-medal">${i<3?medals[i]:'　'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="best-cat">${h.cat === 'すべて' ? 'すべて（'+h.mode+'）' : h.cat}</div>
+            <div style="font-size:11px;color:var(--muted)">${h.mode==='tf'?'○×クイズ':'択一問題'} ／ ${h.date}</div>
+          </div>
+          <div class="best-stat">
+            <div class="best-score">${h.pct}%</div>
+            <div class="best-detail">${h.correct}/${h.total}問 ／ ${h.score}pt</div>
+          </div>
+          <div class="rank-badge ${rankClass(h.pct)}" style="padding:3px 12px;font-size:14px;margin:0">${rankLabel(h.pct)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="best-title">🕐 直近の記録</div>
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">
+      ${history.slice(0,15).map((h,i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+             ${i>0?'border-top:1px solid var(--border)':''}">
+          <div style="font-size:11px;color:var(--muted);width:90px;flex-shrink:0">${h.date}</div>
+          <div style="flex:1;font-size:12px;font-weight:600">${h.cat}</div>
+          <div style="font-size:11px;color:var(--muted)">${h.mode==='tf'?'○×':'択一'}</div>
+          <div style="font-size:14px;font-weight:800;color:var(--cyan);width:40px;text-align:right">${h.pct}%</div>
+          <div class="rank-badge ${rankClass(h.pct)}" style="padding:2px 10px;font-size:12px;margin:0">${rankLabel(h.pct)}</div>
+        </div>`).join('')}
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="clearHistory()">🗑 記録をリセット</button>
+    </div>
+  `;
+}
+// ════════════════════════════════════════
+//  QUIZ STATE
+// ════════════════════════════════════════
+let mode='tf', cat='すべて', deck=[], idx=0, answered=false;
+let score=0, corr=0, wrng=0, streak=0;
+const $       = id => document.getElementById(id);
+const shuffle = a  => [...a].sort(()=>Math.random()-.5);
+function filtered(d){ return cat==='すべて'?shuffle(d):shuffle(d.filter(x=>x.cat===cat)); }
+function updateStats(){
+  $('sScore').textContent=score; $('sCorrect').textContent=corr;
+  $('sWrong').textContent=wrng;  $('sStreak').textContent=streak;
+  $('fireIco').className=streak>=3?'fire':'';
+}
+function updateProg(){
+  const total=deck.length, pct=total?Math.round(idx/total*100):0;
+  $('progLbl').textContent=`問題 ${Math.min(idx+1,total)} / ${total}`;
+  $('progPct').textContent=pct+'%';
+  $('progFill').style.width=pct+'%';
+}
+function buildCats(){
+  $('catRow').innerHTML=CATS.map(c=>
+    `<button class="cpill${c===cat?' on':''}" onclick="selCat('${c}')">${c}</button>`).join('');
+}
+function selCat(c){ cat=c; buildCats(); startMode(); }
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.m-tab').forEach((t,i)=>t.classList.toggle('on',['tf','choice'][i]===m));
+  startMode();
+}
+function startMode(){
+  idx=0; answered=false; score=0; corr=0; wrng=0; streak=0;
+  updateStats();
+  deck=mode==='tf'?filtered(TF):filtered(CHOICE);
+  mode==='tf'?renderTF():renderChoice();
+}
+// ── TF ──
+function renderTF(){
+  if(idx>=deck.length){renderResult();return;}
+  updateProg(); answered=false;
+  const q=deck[idx];
+  $('main').innerHTML=`<div class="qcard">
+    <div class="qlabel">○× クイズ<span class="cat-badge">${q.cat}</span><span class="qno">Q${idx+1}</span></div>
+    <div class="qtext">${q.q}</div>
+    <div id="feedback" class="feedback"></div>
+    <div class="tf-row">
+      <button class="tf-btn" id="bTrue"  onclick="answerTF(true)">○ 正しい</button>
+      <button class="tf-btn" id="bFalse" onclick="answerTF(false)">× 誤り</button>
+    </div>
+    <div class="exp" id="exp"><div class="exp-head">📖 解説・出典</div>${q.exp}</div>
+  </div>`;
+  $('nav').innerHTML=`<span style="font-size:12px;color:var(--muted)">○か×を選んでください</span>`;
+}
+function answerTF(val){
+  if(answered)return; answered=true;
+  const q=deck[idx], ok=(val===q.a);
+  if(ok){corr++;streak++;score+=10+streak*2;}else{wrng++;streak=0;}
+  updateStats();
+  const fb=$('feedback'); fb.className='feedback show '+(ok?'ok':'ng');
+  fb.textContent=ok?'⚡ 正解！':'✗ 不正解';
+  const bt=$('bTrue'),bf=$('bFalse'); bt.disabled=bf.disabled=true;
+  if(q.a===true){bt.classList.add('correct');if(!ok)bf.classList.add('wrong');}
+  else          {bf.classList.add('correct');if(!ok)bt.classList.add('wrong');}
+  $('exp').classList.add('show');
+  $('nav').innerHTML=`<button class="btn btn-go" onclick="nextQ()">次の問題 →</button>
+    <button class="btn btn-ghost" onclick="startMode()">最初から</button>`;
+}
+// ── CHOICE ──
+function renderChoice(){
+  if(idx>=deck.length){renderResult();return;}
+  updateProg(); answered=false;
+  const q=deck[idx],KEYS=['A','B','C','D'];
+  $('main').innerHTML=`<div class="qcard">
+    <div class="qlabel">択一問題<span class="cat-badge">${q.cat}</span><span class="qno">Q${idx+1}</span></div>
+    <div class="qtext">${q.q}</div>
+    <div id="feedback" class="feedback"></div>
+    <div class="opts">${q.opts.map((o,i)=>`<button class="opt-btn" id="o${i}" onclick="answerChoice(${i})">
+      <span class="opt-key">${KEYS[i]}</span>${o}</button>`).join('')}</div>
+    <div class="exp" id="exp"><div class="exp-head">📖 解説・出典</div>${q.exp}</div>
+  </div>`;
+  $('nav').innerHTML=`<span style="font-size:12px;color:var(--muted)">選択肢を選んでください</span>`;
+}
+function answerChoice(i){
+  if(answered)return; answered=true;
+  const q=deck[idx],ok=(i===q.a);
+  if(ok){corr++;streak++;score+=10+streak*2;}else{wrng++;streak=0;}
+  updateStats();
+  const fb=$('feedback'); fb.className='feedback show '+(ok?'ok':'ng');
+  fb.textContent=ok?'⚡ 正解！':'✗ 不正解';
+  q.opts.forEach((_,j)=>{
+    const b=$(`o${j}`); b.disabled=true;
+    if(j===q.a)b.classList.add('correct');
+    else if(j===i&&!ok)b.classList.add('wrong');
+  });
+  $('exp').classList.add('show');
+  $('nav').innerHTML=`<button class="btn btn-go" onclick="nextQ()">次の問題 →</button>
+    <button class="btn btn-ghost" onclick="startMode()">最初から</button>`;
+}
+function nextQ(){ idx++; mode==='tf'?renderTF():renderChoice(); }
+// ── RESULT ──
+function renderResult(){
+  const total=deck.length, pct=total?Math.round(corr/total*100):0;
+  let rank,rc,msg;
+  if(pct>=90){rank='S';rc='rs';msg='完璧！実務でも自信を持って対応できます 🏆';}
+  else if(pct>=75){rank='A';rc='ra';msg='優秀です！あと少しで完璧 🎯';}
+  else if(pct>=60){rank='B';rc='rb';msg='合格ライン。苦手問題を復習しましょう 📚';}
+  else{rank='C';rc='rc';msg='もう一度じっくり学習しましょう 💪';}
+  $('progFill').style.width='100%';
+  $('progLbl').textContent=`全${total}問 完了`;
+  $('progPct').textContent='100%';
+  recordScore(mode, cat, corr, total, score);
+  $('main').innerHTML=`<div class="result-card">
+    <div class="result-pct">${pct}<small>%</small></div>
+    <div class="rank-badge ${rc}">RANK ${rank}</div>
+    <div class="result-msg">${msg}</div>
+    <div class="result-stats">
+      <div class="rs-item"><div class="rs-val" style="color:var(--green)">${corr}</div>
+        <div style="font-size:12px;color:var(--muted)">正解</div></div>
+      <div class="rs-item"><div class="rs-val" style="color:var(--red)">${wrng}</div>
+        <div style="font-size:12px;color:var(--muted)">不正解</div></div>
+      <div class="rs-item"><div class="rs-val" style="color:var(--cyan)">${score}</div>
+        <div style="font-size:12px;color:var(--muted)">スコア</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:16px">
+      ✅ 成績を保存しました ／ 出典：住宅金融支援機構公式サイト www.flat35.com
+    </div>
+  </div>`;
+  $('nav').innerHTML=`
+    <button class="btn btn-go"    onclick="startMode()">もう一度</button>
+    <button class="btn btn-gold"  onclick="showTab('scores')">📊 成績を見る</button>`;
+}
+// ── INIT ──
+buildCats(); startMode(); updateStats();
+</script>
+</body>
+</html>
